@@ -1,1 +1,9 @@
 .DS_Store
+
+# assets
+CozyJapan_FreePack/
+GuttyKreum_JapaneseCity_Freev1/
+Ninja Adventure - Asset Pack/
+
+*.png
+!raccoon-kit.png
