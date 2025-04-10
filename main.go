@@ -1,6 +1,7 @@
 package main
 
 import (
+	"go-rpg/entities"
 	"image"
 	"image/color"
 	"log"
@@ -12,32 +13,12 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-type Sprite struct {
-	Image *ebiten.Image
-	X, Y  float64
-}
-
-type Enemy struct {
-	*Sprite
-	FollowsPlayer bool
-}
-
-type Potion struct {
-	*Sprite
-	HealAmount uint
-}
-
-type Player struct {
-	*Sprite
-	Health uint
-}
-
 type Game struct {
 	X            int
 	Y            int
-	Player       *Player
-	enemies      []*Enemy
-	potions      []*Potion
+	Player       *entities.Player
+	enemies      []*entities.Enemy
+	potions      []*entities.Potion
 	Tilemap      *TilemapJSON
 	TilemapImage *ebiten.Image
 }
@@ -95,19 +76,26 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for _, layer := range g.Tilemap.Layers {
 		// loop over tiles in layer
 		for i, id := range layer.Data {
+			// get the position of the tile
 			x := i % layer.Width
 			y := i / layer.Width
+			// convert to pixels
 			x *= 16
 			y *= 16
+			// get the position on the image where the tile id is
 			srcX := (id - 1) % 22
 			srcY := (id - 1) / 22
+			// convert to pixels
 			srcX *= 16
 			srcY *= 16
+			// set the x, y for drawing tile
 			opts.GeoM.Translate(float64(x), float64(y))
+			// draw the tile
 			screen.DrawImage(
 				g.TilemapImage.SubImage(image.Rect(srcX, srcY, srcX+16, srcY+16)).(*ebiten.Image),
 				&opts,
 			)
+			// reset the geo m for next tile
 			opts.GeoM.Reset()
 		}
 	}
@@ -172,17 +160,17 @@ func main() {
 	game := &Game{
 		X: 240,
 		Y: 160,
-		Player: &Player{
-			Sprite: &Sprite{
+		Player: &entities.Player{
+			Sprite: &entities.Sprite{
 				Image: playerImage,
 				X:     100,
 				Y:     100,
 			},
 			Health: 3,
 		},
-		enemies: []*Enemy{
+		enemies: []*entities.Enemy{
 			{
-				Sprite: &Sprite{
+				Sprite: &entities.Sprite{
 					Image: skeletonImage,
 					X:     50,
 					Y:     50,
@@ -190,7 +178,7 @@ func main() {
 				FollowsPlayer: true,
 			},
 			{
-				Sprite: &Sprite{
+				Sprite: &entities.Sprite{
 					Image: skeletonImage,
 					X:     100,
 					Y:     100,
@@ -198,9 +186,9 @@ func main() {
 				FollowsPlayer: false,
 			},
 		},
-		potions: []*Potion{
+		potions: []*entities.Potion{
 			{
-				Sprite: &Sprite{
+				Sprite: &entities.Sprite{
 					Image: potionImage,
 					X:     100,
 					Y:     70,
