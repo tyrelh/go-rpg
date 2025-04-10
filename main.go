@@ -43,6 +43,11 @@ type Game struct {
 }
 
 func (g *Game) Update() error {
+	if ebiten.IsWindowBeingClosed() {
+		log.Println("Window is being closed...")
+		// Perform any cleanup operations here
+		os.Exit(0)
+	}
 	// react to key presses
 
 	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
@@ -210,6 +215,14 @@ func main() {
 	ebiten.SetWindowSize(game.X*3, game.Y*3)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetWindowTitle("Hello, World!")
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		log.Println("Exiting...")
+		os.Exit(0)
+	}()
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
