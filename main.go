@@ -21,6 +21,7 @@ type Game struct {
 	potions      []*entities.Potion
 	Tilemap      *TilemapJSON
 	TilemapImage *ebiten.Image
+	Camera       *Camera
 }
 
 func (g *Game) Update() error {
@@ -62,15 +63,19 @@ func (g *Game) Update() error {
 		}
 	}
 
+	g.Camera.FollowTarget(g.Player.X+8, g.Player.Y+8, float64(g.X), float64(g.Y))
+	g.Camera.Constrain(
+		float64(g.Tilemap.Layers[0].Width)*16.0,
+		float64(g.Tilemap.Layers[0].Height)*16.0,
+		float64(g.X*3),
+		float64(g.Y*3),
+	)
+
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{120, 180, 255, 255})
-	// ebitenutil.DebugPrint(screen, "Hello, World!")
-	// draw player image
-
-	opts := ebiten.DrawImageOptions{}
 
 	// loop over tilemap layers
 	for _, layer := range g.Tilemap.Layers {
@@ -89,7 +94,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			srcX *= 16
 			srcY *= 16
 			// set the x, y for drawing tile
+			opts := ebiten.DrawImageOptions{}
 			opts.GeoM.Translate(float64(x), float64(y))
+			opts.GeoM.Translate(g.Camera.X, g.Camera.Y)
 			// draw the tile
 			screen.DrawImage(
 				g.TilemapImage.SubImage(image.Rect(srcX, srcY, srcX+16, srcY+16)).(*ebiten.Image),
@@ -102,27 +109,33 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	options := ebiten.DrawImageOptions{}
 	options.GeoM.Translate(g.Player.X, g.Player.Y)
+	options.GeoM.Translate(g.Camera.X, g.Camera.Y)
 	screen.DrawImage(
 		g.Player.Image.SubImage(image.Rect(0, 0, 16, 16)).(*ebiten.Image),
 		&options,
 	)
+	options.GeoM.Reset()
 
 	for _, sprite := range g.enemies {
 		options := ebiten.DrawImageOptions{}
 		options.GeoM.Translate(sprite.X, sprite.Y)
+		options.GeoM.Translate(g.Camera.X, g.Camera.Y)
 		screen.DrawImage(
 			sprite.Image.SubImage(image.Rect(0, 0, 16, 16)).(*ebiten.Image),
 			&options,
 		)
+		options.GeoM.Reset()
 	}
 
 	for _, potion := range g.potions {
 		options := ebiten.DrawImageOptions{}
 		options.GeoM.Translate(potion.X, potion.Y)
+		options.GeoM.Translate(g.Camera.X, g.Camera.Y)
 		screen.DrawImage(
 			potion.Image.SubImage(image.Rect(0, 0, 16, 16)).(*ebiten.Image),
 			&options,
 		)
+		options.GeoM.Reset()
 	}
 }
 
@@ -198,6 +211,7 @@ func main() {
 		},
 		Tilemap:      tilemap,
 		TilemapImage: tilemapImage,
+		Camera:       NewCamera(0, 0),
 	}
 
 	ebiten.SetWindowSize(game.X*3, game.Y*3)
